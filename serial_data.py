@@ -86,8 +86,7 @@ def animate(index, val,  line):
 def read_data():
     global temp_temperature, temp_time
     while True:
-        data = arduino.readline()[:-2]#Omite el fin de linea   
-        print data
+        data = arduino.readline()[:-2]#Omite el fin de linea 
         if data:
             try:
                 #Lee cada dato del serial independientemente
@@ -96,7 +95,7 @@ def read_data():
                     #Agrega un nuevo elemento al top del array
                     temp_temperature = float(stemperature)
                     temp_time = float(stime)#Ajuste en cm^3
-                    
+                    print temp_time, "\t", temp_temperature
             except ValueError:
                 pass
 
