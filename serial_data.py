@@ -22,21 +22,24 @@ import matplotlib.animation as animation
 import serial
 import threading
 import serial.tools.list_ports
+from matplotlib.widgets import Slider
 
-#Historial de volumen
-h_v = []
+# Valores minimo, maximo y por defecto para el slider
+MINVAL, MAXVAL, VAL0 = 0.0, 60.0, 5.0
 
-#Historial de presión
-h_p = []
+# Valores maximo, minimo y muestreo para el plot en el eje x
+# No arrancar en cero para evitar overflow
+XMIN_RANGE, XMAX_RANGE = 0.0, 60.0
+YMIN_RANGE, YMAX_RANGE = 1.0, 8.0
 
-#Temperatura y numero de vueltas
-t, n = 0, 0
+#Historial de tiempo
+h_time = []
+
+#Historial de temperatura
+h_temperature = []
 
 #Variables temporales
-temp_p, temp_v, temp_t, temp_n = [], [], 0, 0
-
-#M es la cantidad de muestras visibles en el plot y por tanto el tamaño de los arreglos
-M = 50
+temp_temperature, temp_time = 0, 0
 
 #Un numero bastante grande para que la animacion nunca termine
 N = 100000
@@ -48,78 +51,85 @@ connected = []
 #Revisa los puertos seriales conectados
 for element in comlist:
     connected.append(element.device)
+    print element.device
 
-#Inicializa la comunicacion serial por el primer puerto habilitado
-arduino = serial.Serial(connected[0], 115200, timeout=0.005)
+#Inicializa la comunicacion serial por el puerto seleccionado
+arduino = serial.Serial(connected[1], 115200)#, timeout=0)
 
 #Esta funcion se ejecuta solo cuando inicia la animacion
 def init():
-    global h_p, h_v, t, n, temp_p, temp_v, temp_t, temp_n
+    global h_temperature, h_time, temp_temperature, temp_time
     
-    #inicializa los arreglos con ceros
-    h_v = [0] * M
-    h_p = [0] * M
-    t = 0
-    n = 0
-    temp_p = [0] * M
-    temp_v = [0] * M
-    temp_t = 0
-    temp_n = 0
-    
+    h_time = [0]
+    h_temperature = [0]
+    temp_temperature = 0
+    temp_time = 0
+
     #Inicializa el plot
-    line.set_data(h_v, h_p)
+    line.set_data(h_time, h_temperature)
     return line,
 
 #Esta funcion se repite continuamente
 def animate(index, val,  line):
-    global h_p, h_v, t, n, temp_p, temp_v, temp_t, temp_n
+    global h_temperature, h_time, temp_temperature, temp_time
     
-    #Asigna los valores temporales leidos serialmente desde el usb, en el plot
-    h_p, h_v, t, n = temp_p, temp_v, temp_t, temp_n
+    #Asigna los valores temporales leidos serialmente desde el usb, en el plot    
+    h_temperature.append(temp_temperature)
+    h_time.append(temp_time)
     
-    #Muestra la temperatura y grafica los datos
-    plt.title("T = " + str(t) + r"$^\circ C$ :: N = " + str(n))                
-    line.set_data([h_v, h_p])
+    #grafica los datos              
+    line.set_data([h_time, h_temperature])
+    
     return line,
 
 #Lee continuamente los datos desde el puerto serial USB
 def read_data():
-    global temp_p, temp_v, temp_t, temp_n
+    global temp_temperature, temp_time
     while True:
-        data = arduino.readline()[:-2]#Omite el fin de linea
+        data = arduino.readline()[:-2]#Omite el fin de linea   
+        print data
         if data:
             try:
                 #Lee cada dato del serial independientemente
-                sp, sv, st, sn = data.split(":")
-                if sp and sv and st:
+                stime, stemperature = data.split("\t")
+                if stemperature and stime:
                     #Agrega un nuevo elemento al top del array
-                    temp_p.append(float(sp))
-                    temp_v.append(float(sv) / 1023.0 * 45.2)#Ajuste en cm^3
-                    #Borra el primer elemento del array, en cada caso
-                    temp_p.pop(0)
-                    temp_v.pop(0)
-                    temp_t = float(st)
-                    temp_n = int(sn)
+                    temp_temperature = float(stemperature)
+                    temp_time = float(stime)#Ajuste en cm^3
+                    
             except ValueError:
                 pass
+
+# Plot animacion
+fig = plt.figure()
+plt.suptitle(u"Diagrama T vs t de planta térmica")
+plt.grid()
+ax = fig.add_subplot(111)
+line,  = ax.plot([], [])#, '.')
+# Adjust the subplots region to leave some space for the sliders and buttons
+fig.subplots_adjust(bottom=0.25)
+ax.set_xlim([XMIN_RANGE, XMAX_RANGE])
+ax.set_ylim([YMIN_RANGE, YMAX_RANGE])
+
+#plt.axis("scaled")
+ax.set_xlabel(r"$t\, / \,[s]$")
+ax.set_ylabel(r"$T\, / \,[V]$")
+
+# Define an axes area and draw a slider in it
+amp_slider_ax  = fig.add_axes([0.15, 0.05, 0.7, 0.05])
+amp_slider = Slider(amp_slider_ax, 'X Adjust', MINVAL, MAXVAL, valinit=VAL0)
+
+# Define an action for modifying the line when any slider's value changes
+def sliders_on_changed(val):
+    ax.set_xlim([XMIN_RANGE, XMAX_RANGE * amp_slider.val])
+    ax.set_ylim([YMIN_RANGE, YMAX_RANGE])
+    fig.canvas.draw_idle()
+    
+amp_slider.on_changed(sliders_on_changed)
 
 # Crea un hilo de ejecucion exclusivo para la lectura de los datos seriales
 t_read_data = threading.Thread(target=read_data)
 t_read_data.start()
-
-# Plot animacion
-fig = plt.figure()
-line,  = plt.plot([], [], '-')
-plt.suptitle(u"Diagrama PV de maquina térmica")
-plt.grid()
-
-#Modificar estos valores de acuerdo a las necesidades del plot
-#45.2 cm^3 es el mayor valor leido posible por el desplazamiento maximo del sensor
-plt.xlim(0, 45.2)
-#El sensor BMP180 tiene un rango de medicion para la presion entre 300 y 1100 hPa, segun el fabricante
-plt.ylim(300, 1100)
-plt.xlabel(r"$V\, / \,[cm^3]$")
-plt.ylabel(r"$P\, / \,[hPa]$")
 
 # Creando animaciones
 # La funcion init se ejecuta solo al inicio de la animacion
@@ -129,11 +139,11 @@ plt.ylabel(r"$P\, / \,[hPa]$")
 # la opcion blit permite optimizar la animcacion, pero no sirve en todos los casos
 # range(N + 1) y fargs, representan los argumentos obligatorios para la funcion animate
 # retornando en "anim" es posible guardar la animacion posteriormente
-anim = animation.FuncAnimation(fig, animate, range(N + 1),  fargs=(0,  line), interval = 100,  init_func=init,  repeat = False,  blit=False)
+anim = animation.FuncAnimation(fig, animate, range(N + 1),  fargs=(0,  line), interval = 50,  init_func=init,  repeat = True,  blit=True)
 
 # La siguiente linea puede no comentarla para guardar un video con el registro de las medidas respectivas.
 # Puede llegar a ser bastante lento dependiendo del tiempo de ejecución y de la velocidad de procesamiento 
 # del computador utilizado.
-#anim.save('stirling.mp4', fps=100, extra_args=['-vcodec', 'libx264'])
+#anim.save('plot.mp4', fps=100, extra_args=['-vcodec', 'libx264'])
 
 plt.show()
