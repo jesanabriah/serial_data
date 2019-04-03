@@ -18,12 +18,12 @@
     
     Conecte la entrada al pin A0 del conversor analogo digital.
     
-    La salida es serial por el puerto USB y es de la forma: "time:temperature"
+    La salida es serial por el puerto USB y es de la forma: "time   temperature"
     
-    Es decir, tiempo y temperatura en grados centigrados. 
+    Es decir, tiempo(segundos) y temperatura(100mV/℃). 
     
     No olvidar polarizar el sensor de temperatura a 5V para evitar dañar 
-    el ADC son voltajes mayores a grandes temperaturas.
+    el ADC son voltajes mayores a grandes temperaturas. (De existir ese riesgo)
 */
 
 double temperature;
@@ -31,14 +31,19 @@ double temperature;
 void setup(){
   //Inicializando la comunicacion serial
   Serial.begin(115200);
+  //1.1V Para mayor precisión en el ADC, dado que nunca pasaremos de los 110 ℃
+  analogReference(INTERNAL1V1);//1.1V (Arduino Mega only)
 }
 
 void loop(){
   //Serial print time in milliseconds
-  Serial.print(millis());
-  //Serial print separator data ":"
-  Serial.print(":");
+  Serial.print(millis()/1000.0, 3);
+  //Serial print separator data "\t"
+  Serial.print("\t");
   //Calculate and serial print temperature
-  temperature = analogRead(A0)*5.0/1023.0;
-  Serial.println(temperature);
+  temperature = analogRead(A0)*0.010752688172;//1.1/1023*10
+  //Dos cifras decimales, 
+  //pues la precision del lm35 se toma como +- 0.5 ℃ 
+  //para el rango de medición utilizado
+  Serial.println(temperature, 2);
 }
