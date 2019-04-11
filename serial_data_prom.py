@@ -122,7 +122,9 @@ def read_data():
                     for i in range(M):
                         sumatime = sumatime + p_time[i]
                         sumatemperature = sumatemperature + p_temperature[i]
-                    temp_time, temp_temperature = sumatime/M, sumatemperature/M
+                    sumatime, sumatemperature = sumatime/M, sumatemperature/M
+                    
+                    temp_time, temp_temperature = sumatime, sumatemperature
                     
                     #Print data
                     print temp_time, "\t", temp_temperature
