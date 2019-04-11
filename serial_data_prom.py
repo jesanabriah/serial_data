@@ -106,26 +106,23 @@ def read_data():
                 stime, stemperature = data.split("\t")
                 if stemperature and stime:
                     #Agrega un nuevo elemento al top del array
-                    temp_temperature = float(stemperature)
-                    temp_time = float(stime)#Ajuste en cm^3
+                    temp_temperature0 = float(stemperature)
+                    temp_time0 = float(stime)#Ajuste en cm^3
                     
                     #Sacando un promedio de los datos
                     #Agrega un nuevo elemento al top del array
-                    p_time.append(temp_time)
-                    p_temperature.append(temp_temperature)
+                    p_time.append(temp_time0)
+                    p_temperature.append(temp_temperature0)
                     #Borra el primer elemento del array, en cada caso
                     p_time.pop(0)
                     p_temperature.pop(0)
                     
-                    suma = 0    
+                    sumatime = 0    
+                    sumatemperature = 0
                     for i in range(M):
-                        suma = suma + p_time[i]
-                    temp_time = suma/M
-                    
-                    suma = 0    
-                    for i in range(M):
-                        suma = suma + p_temperature[i]
-                    temp_temperature = suma/M
+                        sumatime = sumatime + p_time[i]
+                        sumatemperature = sumatemperature + p_temperature[i]
+                    temp_time, temp_temperature = sumatime/M, sumatemperature/M
                     
                     #Print data
                     print temp_time, "\t", temp_temperature
