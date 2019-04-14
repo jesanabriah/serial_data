@@ -48,7 +48,7 @@ h_temperature = []
 temp_temperature, temp_time = 0, 0
 
 #M es la cantidad de muestras para calcular el promedio de la señal
-M = 10
+M = 20
 
 #Un numero bastante grande para que la animacion nunca termine
 N = 100000
@@ -69,6 +69,8 @@ arduino = serial.Serial(connected[1], 9600)#, timeout=0)
 p_time = [0] * M
 p_temperature = [0] * M
     
+#fig = plt.figure()
+
 #Esta funcion se ejecuta solo cuando inicia la animacion
 def init():
     global h_temperature, h_time, temp_temperature, temp_time
@@ -90,6 +92,9 @@ def animate(index, val,  line):
     h_temperature.append(temp_temperature)
     h_time.append(temp_time)
     
+    title_plot = str(round(temp_temperature*10, 1)) + r"$^\circ$C ; " + str(round(temp_time, 1)) + " s"
+    plt.title(title_plot)
+
     #grafica los datos              
     line.set_data([h_time, h_temperature])
     
@@ -136,7 +141,7 @@ fig = plt.figure()
 plt.suptitle(u"Diagrama T vs t de planta térmica")
 plt.grid()
 ax = fig.add_subplot(111)
-line,  = ax.plot([], [])#, '.')
+line,  = ax.plot([], [], '.')
 # Adjust the subplots region to leave some space for the sliders and buttons
 fig.subplots_adjust(bottom=0.25)
 ax.set_xlim([XMIN_RANGE, XMAX_RANGE])
@@ -170,7 +175,7 @@ t_read_data.start()
 # la opcion blit permite optimizar la animcacion, pero no sirve en todos los casos
 # range(N + 1) y fargs, representan los argumentos obligatorios para la funcion animate
 # retornando en "anim" es posible guardar la animacion posteriormente
-anim = animation.FuncAnimation(fig, animate, range(N + 1),  fargs=(0,  line), interval = 50,  init_func=init,  repeat = True,  blit=True)
+anim = animation.FuncAnimation(fig, animate, range(N + 1),  fargs=(0,  line), interval = 50,  init_func=init,  repeat = True,  blit=False)
 
 # La siguiente linea puede no comentarla para guardar un video con el registro de las medidas respectivas.
 # Puede llegar a ser bastante lento dependiendo del tiempo de ejecución y de la velocidad de procesamiento 
