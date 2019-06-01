@@ -29,8 +29,8 @@ MINVAL, MAXVAL, VAL0 = 0.0, 60.0, 5.0
 
 # Valores maximo, minimo y muestreo para el plot en el eje x
 # No arrancar en cero para evitar overflow
-XMIN_RANGE, XMAX_RANGE = 0.0, 60.0
-YMIN_RANGE, YMAX_RANGE = 1.0, 8.0
+XMIN_RANGE, XMAX_RANGE = 0.0, 300.0
+YMIN_RANGE, YMAX_RANGE = 0.0, 15.0
 
 #Historial de tiempo
 h_time = []
@@ -138,7 +138,7 @@ t_read_data.start()
 # la opcion blit permite optimizar la animcacion, pero no sirve en todos los casos
 # range(N + 1) y fargs, representan los argumentos obligatorios para la funcion animate
 # retornando en "anim" es posible guardar la animacion posteriormente
-anim = animation.FuncAnimation(fig, animate, range(N + 1),  fargs=(0,  line), interval = 50,  init_func=init,  repeat = True,  blit=True)
+anim = animation.FuncAnimation(fig, animate, range(N + 1),  fargs=(0,  line), interval = 1,  init_func=init,  repeat = True,  blit=True)
 
 # La siguiente linea puede no comentarla para guardar un video con el registro de las medidas respectivas.
 # Puede llegar a ser bastante lento dependiendo del tiempo de ejecución y de la velocidad de procesamiento 

@@ -30,9 +30,9 @@ double temperature;
 
 void setup(){
   //Inicializando la comunicacion serial
-  Serial.begin(9600);
+  Serial.begin(115200);
   //1.1V Para mayor precisión en el ADC, dado que nunca pasaremos de los 110 ℃
-  analogReference(INTERNAL1V1);//1.1V (Arduino Mega only)
+  //analogReference(INTERNAL1V1);//1.1V (Arduino Mega only)
 }
 
 void loop(){
