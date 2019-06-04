@@ -30,7 +30,7 @@ MINVAL, MAXVAL, VAL0 = 0.0, 60.0, 5.0
 # Valores maximo, minimo y muestreo para el plot en el eje x
 # No arrancar en cero para evitar overflow
 XMIN_RANGE, XMAX_RANGE = 0.0, 300.0
-YMIN_RANGE, YMAX_RANGE = 0.0, 15.0
+YMIN_RANGE, YMAX_RANGE = 0.0, 8.0
 
 #Historial de tiempo
 h_time = []

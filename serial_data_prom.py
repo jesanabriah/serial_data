@@ -29,8 +29,8 @@ MINVAL, MAXVAL, VAL0 = 0.0, 60.0, 5.0
 
 # Valores maximo, minimo y muestreo para el plot en el eje x
 # No arrancar en cero para evitar overflow
-XMIN_RANGE, XMAX_RANGE = 0.0, 60.0
-YMIN_RANGE, YMAX_RANGE = 1.0, 8.0
+XMIN_RANGE, XMAX_RANGE = 0.0, 300.0
+YMIN_RANGE, YMAX_RANGE = 3.0, 5.0
 
 #muestras de tiempo
 p_time = []
@@ -38,20 +38,26 @@ p_time = []
 #muestras de temperatura
 p_temperature = []
 
+#muestras de entrada
+p_entrada = []
+
 #Historial de tiempo
 h_time = []
 
 #Historial de temperatura
 h_temperature = []
 
+#Historial de entrada
+h_entrada = []
+
 #Variables temporales
-temp_temperature, temp_time = 0, 0
+temp_temperature, temp_entrada, temp_time = 0, 0, 0
 
 #M es la cantidad de muestras para calcular el promedio de la señal
-M = 20
+M = 1024
 
 #Un numero bastante grande para que la animacion nunca termine
-N = 100000
+N = 1000000
 
 #Lee los puertos seriales habilitados en el sistema
 comlist = serial.tools.list_ports.comports()
@@ -63,22 +69,25 @@ for element in comlist:
     print element.device
 
 #Inicializa la comunicacion serial por el puerto seleccionado
-arduino = serial.Serial(connected[1], 9600)#, timeout=0)
+arduino = serial.Serial(connected[1], 115200)#, timeout=0)
 
 #Init values
 p_time = [0] * M
 p_temperature = [0] * M
+p_entrada = [0] * M
     
 #fig = plt.figure()
 
 #Esta funcion se ejecuta solo cuando inicia la animacion
 def init():
-    global h_temperature, h_time, temp_temperature, temp_time
+    global h_entrada, h_temperature, h_time, temp_entrada, temp_temperature, temp_time
 
     h_time = [0]
     h_temperature = [0]
-    temp_temperature = 0
+    h_entrada = [0]
     temp_time = 0
+    temp_temperature = 0
+    temp_entrada = 0
 
     #Inicializa el plot
     line.set_data(h_time, h_temperature)
@@ -86,9 +95,10 @@ def init():
 
 #Esta funcion se repite continuamente
 def animate(index, val,  line):
-    global h_temperature, h_time, temp_temperature, temp_time
+    global h_entrada, h_temperature, h_time, temp_entrada, temp_temperature, temp_time
        
     #Asigna los valores temporales leidos serialmente desde el usb, en el plot    
+    h_entrada.append(temp_entrada)
     h_temperature.append(temp_temperature)
     h_time.append(temp_time)
     
@@ -102,37 +112,42 @@ def animate(index, val,  line):
 
 #Lee continuamente los datos desde el puerto serial USB
 def read_data():
-    global temp_temperature, temp_time, p_time, p_temperature
+    global temp_entrada, temp_temperature, temp_time, p_time, p_temperature, p_entrada
     while True:
         data = arduino.readline()[:-2]#Omite el fin de linea 
         if data:
             try:
                 #Lee cada dato del serial independientemente
-                stime, stemperature = data.split("\t")
-                if stemperature and stime:
+                stime, stemperature, sentrada = data.split("\t")
+                if stemperature and stime and sentrada:
                     #Agrega un nuevo elemento al top del array
                     temp_temperature0 = float(stemperature)
                     temp_time0 = float(stime)#Ajuste en cm^3
+                    temp_entrada0 = float(sentrada)
                     
                     #Sacando un promedio de los datos
                     #Agrega un nuevo elemento al top del array
                     p_time.append(temp_time0)
                     p_temperature.append(temp_temperature0)
+                    p_entrada.append(temp_entrada0)
                     #Borra el primer elemento del array, en cada caso
                     p_time.pop(0)
                     p_temperature.pop(0)
+                    p_entrada.pop(0)
                     
                     sumatime = 0    
                     sumatemperature = 0
+                    sumaentrada = 0
                     for i in range(M):
                         sumatime = sumatime + p_time[i]
                         sumatemperature = sumatemperature + p_temperature[i]
-                    sumatime, sumatemperature = sumatime/M, sumatemperature/M
+                        sumaentrada = sumaentrada + p_entrada[i]
+                    sumatime, sumatemperature, sumaentrada = sumatime/M, sumatemperature/M, sumaentrada/M
                     
-                    temp_time, temp_temperature = sumatime, sumatemperature
+                    temp_time, temp_temperature, temp_entrada = sumatime, sumatemperature, sumaentrada
                     
                     #Print data
-                    print temp_time, "\t", temp_temperature
+                    print temp_time, "\t", temp_temperature, "\t", temp_entrada
             except ValueError:
                 pass
 
